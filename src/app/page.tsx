@@ -42,6 +42,8 @@ export default function Home() {
   const addStableNetwork = async () => {
     if (typeof window.ethereum !== "undefined") {
       try {
+        setError("🔧 Adding Stable Mainnet to your wallet...");
+        
         await window.ethereum.request({
           method: "wallet_addEthereumChain",
           params: [
@@ -58,8 +60,22 @@ export default function Home() {
             },
           ],
         });
+        
+        setError("✅ Stable Mainnet added successfully!");
+        
+        // Refresh network status
+        setTimeout(async () => {
+          if (provider) {
+            const network = await provider.getNetwork();
+            setCurrentChainId(Number(network.chainId));
+            if (Number(network.chainId) === 988) {
+              setError("🎉 Successfully switched to Stable Mainnet!");
+              fetchMerklRewards(account!);
+            }
+          }
+        }, 1000);
       } catch (error) {
-        console.error("Failed to add network:", error);
+        setError("❌ Failed to add network: " + (error as Error).message);
       }
     }
   };
@@ -79,6 +95,8 @@ export default function Home() {
   const connectWallet = async () => {
     if (typeof window.ethereum !== "undefined") {
       try {
+        setError("🔌 Connecting to wallet...");
+        
         const provider = new ethers.BrowserProvider(window.ethereum);
         const signer = await provider.getSigner();
         const address = await signer.getAddress();
@@ -87,17 +105,18 @@ export default function Home() {
         setAccount(address);
         setProvider(provider);
         setCurrentChainId(Number(network.chainId));
-        setError(null);
+        
+        setError("✅ Wallet connected successfully!");
         
         // Check if we're on the correct network
         if (Number(network.chainId) !== 988) {
-          setError("Please switch to Stable Mainnet (Chain ID: 988)");
+          setError("⚠️ Please switch to Stable Mainnet (Chain ID: 988)");
         }
       } catch (error) {
-        setError("Failed to connect wallet");
+        setError("❌ Failed to connect wallet");
       }
     } else {
-      setError("MetaMask is not installed");
+      setError("❌ MetaMask is not installed");
     }
   };
 
@@ -106,34 +125,39 @@ export default function Home() {
     setError(null);
     
     try {
+      setError("🔍 Fetching rewards from Merkl API...");
+      
       const response = await fetch(
         `https://api.merkl.xyz/v3/rewards?user=${userAddress}`
       );
       const data: MerklResponse = await response.json();
       
+      setError("✅ Successfully fetched rewards data");
+      
       // Look for chain ID 988 (Stable Chain)
       const stableChainData = data["988"];
       if (!stableChainData) {
-        setError("No rewards found on Stable Chain");
+        setError("❌ No rewards found on Stable Chain");
         return;
       }
 
       // Find USDT token data
       const usdtTokenData = stableChainData.tokenData[USDT_TOKEN];
       if (!usdtTokenData) {
-        setError("No USDT rewards found");
+        setError("❌ No USDT rewards found");
         return;
       }
 
       // Check if there are unclaimed rewards
       if (usdtTokenData.unclaimed === "0") {
-        setError("No unclaimed USDT rewards available");
+        setError("ℹ️ No unclaimed USDT rewards available");
         return;
       }
 
+      setError("💰 Found unclaimed USDT rewards!");
       setTokenData(usdtTokenData);
     } catch (error) {
-      setError("Failed to fetch rewards data");
+      setError("❌ Failed to fetch rewards data");
     } finally {
       setLoading(false);
     }
@@ -181,10 +205,14 @@ export default function Home() {
     setError(null);
     
     try {
+      setError("🔧 Generating claim transaction...");
+      
       const signer = await provider.getSigner();
       
       // Generate hex data
       const hexData = generateClaimHex(account, tokenData.unclaimed, tokenData.proof);
+      
+      setError("📝 Transaction created, waiting for your approval...");
       
       // Create transaction
       const tx = {
@@ -193,14 +221,21 @@ export default function Home() {
         value: "0x0",
       };
       
+      setError("⏳ Sending transaction to blockchain...");
+      
       // Send transaction
       const transaction = await signer.sendTransaction(tx);
+      
+      setError(`🔄 Transaction submitted! Hash: ${transaction.hash.slice(0, 10)}...`);
+      
+      setError("⏳ Waiting for transaction confirmation...");
+      
       await transaction.wait();
       
-      setError("Transaction successful!");
+      setError("🎉 Transaction successful! Rewards claimed!");
       setTokenData(null); // Refresh data
     } catch (error) {
-      setError("Transaction failed: " + (error as Error).message);
+      setError("❌ Transaction failed: " + (error as Error).message);
     } finally {
       setLoading(false);
     }
