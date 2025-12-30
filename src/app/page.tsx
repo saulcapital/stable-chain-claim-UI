@@ -67,17 +67,11 @@ export default function Home() {
   const switchToStableNetwork = async () => {
     if (typeof window.ethereum !== "undefined") {
       try {
-        await window.ethereum.request({
-          method: "wallet_switchEthereumChain",
-          params: [{ chainId: "0x3dc" }],
-        });
+        // Try to add the network first (more reliable than switching)
+        await addStableNetwork();
       } catch (error: any) {
-        // This error code indicates that the chain has not been added to MetaMask
-        if (error.code === 4902) {
-          await addStableNetwork();
-        } else {
-          console.error("Failed to switch network:", error);
-        }
+        console.error("Failed to add network:", error);
+        setError("Failed to add Stable Mainnet to wallet");
       }
     }
   };
@@ -219,46 +213,50 @@ export default function Home() {
   }, [account]);
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-gray-50 font-sans">
-      <div className="w-full max-w-md p-8 bg-white rounded-lg shadow-lg">
-        <h1 className="text-2xl font-bold text-center mb-8">Merkl USDT Claim</h1>
+    <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-slate-900 to-slate-800 font-sans">
+      <div className="w-full max-w-md p-8 bg-slate-800 rounded-xl shadow-2xl border border-slate-700">
+        <h1 className="text-3xl font-bold text-center mb-8 text-white">Merkl USDT Claim</h1>
         
         {!account ? (
           <button
             onClick={connectWallet}
-            className="w-full bg-blue-600 text-white py-3 px-4 rounded-lg hover:bg-blue-700 transition-colors"
+            className="w-full bg-blue-600 text-white py-3 px-4 rounded-lg hover:bg-blue-700 transition-all transform hover:scale-105 font-medium"
           >
             Connect Wallet
           </button>
         ) : (
           <div className="space-y-4">
-            <div className="text-sm text-gray-600">
+            <div className="p-3 bg-slate-700 rounded-lg text-sm text-slate-300">
               Connected: {account.slice(0, 6)}...{account.slice(-4)}
             </div>
             
             {currentChainId !== 988 && (
               <div className="space-y-3">
-                <div className="p-3 bg-yellow-100 text-yellow-700 rounded-lg text-sm">
+                <div className="p-4 bg-amber-900/50 border border-amber-700 text-amber-200 rounded-lg text-sm">
+                  <div className="font-medium mb-1">⚠️ Network Required</div>
                   Please switch to Stable Mainnet to claim rewards
                 </div>
                 <button
                   onClick={switchToStableNetwork}
-                  className="w-full bg-orange-600 text-white py-2 px-4 rounded-lg hover:bg-orange-700 transition-colors text-sm"
+                  className="w-full bg-amber-600 text-white py-3 px-4 rounded-lg hover:bg-amber-700 transition-all transform hover:scale-105 font-medium"
                 >
-                  Switch to Stable Mainnet
+                  Add Stable Mainnet
                 </button>
               </div>
             )}
             
             {loading && (
-              <div className="text-center text-gray-600">Loading...</div>
+              <div className="text-center text-slate-400 py-4">
+                <div className="inline-block animate-spin rounded-full h-6 w-6 border-b-2 border-blue-500"></div>
+                <div className="mt-2">Loading...</div>
+              </div>
             )}
             
             {error && (
-              <div className={`p-3 rounded-lg text-sm ${
+              <div className={`p-4 rounded-lg text-sm ${
                 error.includes("successful") 
-                  ? "bg-green-100 text-green-700" 
-                  : "bg-red-100 text-red-700"
+                  ? "bg-green-900/50 border border-green-700 text-green-200" 
+                  : "bg-red-900/50 border border-red-700 text-red-200"
               }`}>
                 {error}
               </div>
@@ -266,12 +264,12 @@ export default function Home() {
             
             {currentChainId === 988 && tokenData && (
               <div className="space-y-4">
-                <div className="p-4 bg-gray-50 rounded-lg">
-                  <h3 className="font-semibold mb-2">Available Rewards</h3>
-                  <p className="text-lg">
+                <div className="p-6 bg-slate-700 rounded-lg border border-slate-600">
+                  <h3 className="font-semibold mb-3 text-white">Available Rewards</h3>
+                  <p className="text-2xl font-bold text-green-400">
                     {(Number(tokenData.unclaimed) / 1e6).toFixed(6)} USDT
                   </p>
-                  <p className="text-xs text-gray-500 mt-1">
+                  <p className="text-xs text-slate-400 mt-2">
                     on Stable Mainnet
                   </p>
                 </div>
@@ -279,7 +277,7 @@ export default function Home() {
                 <button
                   onClick={claimRewards}
                   disabled={loading}
-                  className="w-full bg-green-600 text-white py-3 px-4 rounded-lg hover:bg-green-700 transition-colors disabled:bg-gray-400"
+                  className="w-full bg-green-600 text-white py-3 px-4 rounded-lg hover:bg-green-700 transition-all transform hover:scale-105 disabled:bg-slate-600 disabled:transform-none font-medium"
                 >
                   {loading ? "Processing..." : "Claim Rewards"}
                 </button>
@@ -287,8 +285,9 @@ export default function Home() {
             )}
             
             {currentChainId === 988 && !tokenData && !loading && (
-              <div className="p-4 bg-gray-50 rounded-lg text-center text-gray-600">
-                No unclaimed USDT rewards found
+              <div className="p-6 bg-slate-700 rounded-lg border border-slate-600 text-center text-slate-400">
+                <div className="text-lg mb-2">No Rewards Found</div>
+                <div className="text-sm">No unclaimed USDT rewards available</div>
               </div>
             )}
           </div>
