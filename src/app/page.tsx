@@ -250,7 +250,7 @@ export default function Home() {
   return (
     <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-slate-900 to-slate-800 font-sans">
       <div className="w-full max-w-md p-8 bg-slate-800 rounded-xl shadow-2xl border border-slate-700">
-        <h1 className="text-3xl font-bold text-center mb-8 text-white">Merkl USDT Claim</h1>
+        <h1 className="text-3xl font-bold text-center mb-8 text-white">Stable Phase 2 predeposit USDT0 claim</h1>
         
         {!account ? (
           <button
