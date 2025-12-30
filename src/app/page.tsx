@@ -234,8 +234,12 @@ export default function Home() {
       
       setError("🎉 Transaction successful! Rewards claimed!");
       setTokenData(null); // Refresh data
-    } catch (error) {
-      setError("❌ Transaction failed: " + (error as Error).message);
+    } catch (error: any) {
+      if (error.code === 4001) {
+        setError("❌ You rejected the transaction");
+      } else {
+        setError("❌ Transaction failed: " + (error as Error).message);
+      }
     } finally {
       setLoading(false);
     }
